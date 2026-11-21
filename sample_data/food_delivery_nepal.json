@@ -1,0 +1,26 @@
+{
+  "_notice": "SAMPLE DATA for offline demo only. Hand-written illustrative summaries, NOT verified facts. Used only when live web search is unavailable.",
+  "keywords": ["food delivery", "foodmandu", "pathao", "nepal"],
+  "results": [
+    {
+      "title": "Foodmandu company overview",
+      "url": "https://foodmandu.com",
+      "snippet": "Foodmandu is one of the oldest online food delivery platforms in Nepal, founded around 2010 and based in Kathmandu. It partners with restaurants mainly in the Kathmandu Valley and some other cities."
+    },
+    {
+      "title": "Pathao Nepal services",
+      "url": "https://pathao.com/np",
+      "snippet": "Pathao, originally a Bangladeshi ride-hailing company, operates in Nepal offering rides, food delivery (Pathao Food), and parcel services through a single app."
+    },
+    {
+      "title": "Digital payments in Nepal",
+      "url": "https://www.nrb.org.np",
+      "snippet": "Digital wallets such as eSewa and Khalti have grown in Nepal, making online ordering easier, although cash on delivery remains common."
+    },
+    {
+      "title": "Challenges for delivery businesses in Nepal",
+      "url": "https://example.com/sample-nepal-delivery-challenges",
+      "snippet": "Common challenges include traffic congestion, inconsistent addressing systems, high rider costs, and concentration of demand in urban areas such as Kathmandu, Lalitpur, Bhaktapur and Pokhara."
+    }
+  ]
+}

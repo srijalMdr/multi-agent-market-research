@@ -55,7 +55,7 @@ def chat(system: str, user: str, temperature: float = 0.2, json_mode: bool = Fal
         )
     except LLMError:
         raise
-    except Exception as e:  # network, auth, rate limit
+    except Exception as e:
         raise LLMError(f"LLM request failed: {e}") from e
     return resp.choices[0].message.content or ""
 

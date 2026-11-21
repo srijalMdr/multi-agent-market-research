@@ -8,7 +8,6 @@ from core.models import ResearchState
 
 MAX_REVISIONS = 1
 
-# on_step(step_name, state) lets the UI show progress live.
 StepCallback = Callable[[str, ResearchState], None]
 
 

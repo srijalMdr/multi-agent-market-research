@@ -13,9 +13,8 @@ from agents import orchestrator
 from core.llm import LLMError, has_llm_key, llm_config
 from core.models import ResearchState
 from core.report import brief_to_markdown, cite
-from core.search import has_tavily_key
 
-st.set_page_config(page_title="Market Research Agents", layout="wide")
+st.set_page_config(page_title="Market Research Agents", layout="wide", initial_sidebar_state="collapsed")
 
 EXAMPLES = [
     "Analyze the food delivery market in Nepal.",
@@ -32,7 +31,6 @@ AGENTS = [
     ("revision", "05", "Revision", "Fixes issues (max 1)"),
 ]
 
-# ---------------- Styles ----------------
 st.markdown(
     """
 <style>
@@ -41,8 +39,17 @@ st.markdown(
 .hero h1 {font-size: 3rem; font-weight: 500; letter-spacing: -0.03em; line-height: 1.1;
   color: #111111; margin: 0 0 14px 0;}
 .hero p {color: #3F3F46; font-size: 1.05rem; max-width: 560px; margin: 0 auto; line-height: 1.6;}
-[data-testid="stVerticalBlockBorderWrapper"] {background: #FFFFFF; border-radius: 16px !important;
-  border-color: #E7E5E4 !important; box-shadow: 0 1px 2px rgba(0,0,0,.03);}
+.st-key-search_card {background: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 16px;
+  padding: 14px 16px 12px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.04);}
+.st-key-search_card [data-baseweb="textarea"], .st-key-search_card [data-baseweb="base-input"],
+.st-key-search_card textarea {background: #FFFFFF !important; border: none !important;
+  box-shadow: none !important; padding-left: 0; font-size: 1rem; resize: none;}
+.st-key-search_card [data-baseweb="textarea"]:focus-within {box-shadow: none !important; border: none !important;}
+.st-key-search_card [data-testid="stTextAreaRootElement"] {background: #FFFFFF !important;
+  border: 0 !important;}
+.st-key-search_card [data-testid="stTextArea"] *, .st-key-search_card [data-testid="stTextArea"] *:focus,
+.st-key-search_card [data-testid="stTextArea"] *:focus-within {border-color: transparent !important;
+  box-shadow: none !important; outline: none !important;}
 .examples {text-align: center; color: #71717A; font-size: .85rem; margin: 14px 0 6px 0;}
 .pipeline {display: flex; gap: 10px; margin: 6px 0 4px 0; flex-wrap: wrap;}
 .agent {
@@ -78,6 +85,8 @@ st.markdown(
 .pipeline {margin-bottom: 18px;}
 [data-testid="stMetric"] {background: white; border: 1px solid #E2E8F0; border-radius: 14px; padding: 12px 16px;}
 [data-testid="stMetricValue"] {font-size: 1.7rem; color: #7C3AED; font-weight: 700;}
+.meta {color: #71717A; font-size: .8rem; margin: 8px 0 4px 0;}
+[data-testid="stSidebarCollapsedControl"], [data-testid="stSidebar"] {display: none;}
 .sample-banner {background: #FEF3C7; border: 1px solid #F59E0B; color: #92400E; border-radius: 12px;
   padding: 10px 14px; margin-bottom: 12px; font-weight: 600;}
 </style>
@@ -86,7 +95,6 @@ st.markdown(
 )
 
 
-# ---------------- Helpers ----------------
 def esc(text: str) -> str:
     return html.escape(text or "")
 
@@ -115,21 +123,6 @@ def set_query(q: str) -> None:
     st.session_state["query"] = q
 
 
-# ---------------- Sidebar ----------------
-with st.sidebar:
-    st.markdown("### Configuration")
-    st.markdown(f"**Model**  \n`{llm_config()['model']}`")
-    st.markdown("**LLM key**  \n" + ("Found" if has_llm_key() else "Missing"))
-    st.markdown("**Search**  \n" + ("Tavily" if has_tavily_key() else "DuckDuckGo (no Tavily key)"))
-    st.caption("If live search fails, clearly labelled sample data is used.")
-    st.divider()
-    st.markdown("### How it works")
-    st.markdown(
-        "Agents pass one shared **Pydantic** object (`ResearchState`) along the chain. "
-        "The Critic can request **at most one** revision."
-    )
-
-# ---------------- Hero + input ----------------
 st.markdown(
     '<div class="hero"><h1>Multi-Agent Market Research</h1>'
     "<p>Enter a company or industry. Four AI agents search the web, write a short brief, "
@@ -139,15 +132,15 @@ st.markdown(
 
 _, mid, _ = st.columns([1, 6, 1])
 with mid:
-    with st.container(border=True):
-        c1, c2 = st.columns([5, 1.3], vertical_alignment="center")
-        with c1:
-            query = st.text_input(
-                "Company or industry",
-                key="query",
-                placeholder="Describe a company or industry...",
-                label_visibility="collapsed",
-            )
+    with st.container(key="search_card"):
+        query = st.text_area(
+            "Company or industry",
+            key="query",
+            placeholder="Describe a company or industry to research...",
+            label_visibility="collapsed",
+            height=90,
+        )
+        _, c2 = st.columns([4, 1.2], vertical_alignment="center")
         with c2:
             start = st.button(
                 "Start research", type="primary", use_container_width=True, disabled=not has_llm_key()
@@ -163,7 +156,6 @@ if not has_llm_key():
 
 pipeline_slot = st.empty()
 
-# ---------------- Run ----------------
 if start:
     if not query.strip():
         st.warning("Please enter a company or industry.")
@@ -188,13 +180,13 @@ if start:
                 st.session_state["result"] = orchestrator.run(query, on_step=on_step)
         except LLMError as e:
             st.error(f"LLM error: {e}")
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             st.error(f"Something went wrong: {e}")
 
 state: ResearchState | None = st.session_state.get("result")
 
 if state and state.final_brief:
-    if not start:  # show final pipeline state on reruns
+    if not start:
         done = {k: "done" for k, *_ in AGENTS}
         if state.revision_count == 0:
             done["revision"] = "skipped"
@@ -210,6 +202,10 @@ if state and state.final_brief:
     m2.metric("Sourced findings", len(f.findings))
     m3.metric("Competitors", len(b.competitors))
     m4.metric("Critic", "Approved" if state.feedback.approved else "1 revision")
+    st.markdown(
+        f'<div class="meta">Search: {esc(f.search_provider)} &middot; Model: {esc(llm_config()["model"])}</div>',
+        unsafe_allow_html=True,
+    )
 
     if f.is_sample_data:
         st.markdown(
@@ -220,7 +216,6 @@ if state and state.final_brief:
 
     tab_brief, tab_trail, tab_src = st.tabs(["Brief", "Agent trail", "Sources"])
 
-    # ---- Brief ----
     with tab_brief:
         st.markdown(
             f'<div class="card"><h4>Summary</h4><p>{esc(b.summary)}</p></div>',
@@ -261,7 +256,6 @@ if state and state.final_brief:
             type="primary",
         )
 
-    # ---- Agent trail ----
     with tab_trail:
         st.markdown("##### Handoff log")
         st.code("\n".join(state.log), language=None)
@@ -285,7 +279,6 @@ if state and state.final_brief:
         with st.expander("Full shared state (JSON)"):
             st.json(state.model_dump())
 
-    # ---- Sources ----
     with tab_src:
         st.caption(f"Collected via **{f.search_provider}**. Sources cited in the brief are marked *cited*.")
         rows = []

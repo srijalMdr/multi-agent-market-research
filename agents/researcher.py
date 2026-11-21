@@ -75,7 +75,7 @@ def run(state: ResearchState) -> ResearchState:
         Finding(fact=f.fact, source_ids=[i for i in f.source_ids if i in valid_ids])
         for f in extracted.findings
     ]
-    findings = [f for f in findings if f.source_ids]  # drop unsourced claims
+    findings = [f for f in findings if f.source_ids]
 
     state.findings = ResearchFindings(
         search_queries=plan.queries,

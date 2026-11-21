@@ -15,11 +15,11 @@ def brief_to_markdown(state: ResearchState) -> str:
     used = b.source_ids or sorted(src)
     out = [f"# Research Brief: {state.query}\n"]
     if state.findings.is_sample_data:
-        out.append("> ⚠️ Built from labelled SAMPLE DATA (live search unavailable).\n")
+        out.append("> Built from labelled SAMPLE DATA (live search unavailable).\n")
     out.append(f"## Summary\n{b.summary}\n")
     out.append("## Competitors")
     if b.competitors:
-        out += [f"- **{c.name}**: {c.description} {cite(c.source_ids)}" for c in b.competitors]
+        out += [f"- **{c.name}**: {c.description}" + ("" if "[" in c.description else f" {cite(c.source_ids)}") for c in b.competitors]
     else:
         out.append("- No relevant competitors identified in the sources.")
     out.append("\n## Key Observations")

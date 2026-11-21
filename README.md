@@ -1,4 +1,4 @@
-# 🔎 Multi-Agent Market Research App
+# Multi-Agent Market Research App
 
 A simple Streamlit web app: enter a company or industry (e.g. *"Analyze the food delivery market in Nepal."*), and four AI agents research it on the web and write a short, sourced research brief.
 

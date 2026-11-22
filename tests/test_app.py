@@ -10,8 +10,8 @@ def test_app_loads_and_example_fills_input(monkeypatch):
     at = AppTest.from_file(APP, default_timeout=60).run()
     assert not at.exception
 
-    [b for b in at.button if b.label == "Pathao Nepal"][0].click().run()
-    assert at.text_area[0].value == "Pathao Nepal"
+    [b for b in at.button if b.label == "Online grocery delivery in Nepal"][0].click().run()
+    assert at.text_area[0].value == "Online grocery delivery in Nepal"
 
 
 def test_missing_key_disables_button(monkeypatch):

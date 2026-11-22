@@ -18,7 +18,7 @@ st.set_page_config(page_title="Market Research Agents", layout="wide", initial_s
 
 EXAMPLES = [
     "Analyze the food delivery market in Nepal.",
-    "Pathao Nepal",
+    "Online grocery delivery in Nepal",
     "Electric vehicle market in India",
     "Digital wallets in Nepal",
 ]

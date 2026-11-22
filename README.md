@@ -2,9 +2,13 @@
 
 A Streamlit app that takes a company or industry (for example "Analyze the food delivery market in Nepal.") and produces a short research brief using four agents: Orchestrator, Researcher, Analyst and Critic.
 
-See [sample_output.md](sample_output.md) for an example result and [docs/demoVideo.webm](docs/demoVideo.webm) for a short demo.
+See [sample_output.md](sample_output.md) for an example result.
 
 ![Screenshot](docs/screenshot.png)
+
+Demo video:
+
+https://github.com/user-attachments/assets/77e62530-634a-4dde-ab09-3a72c7b20363
 
 ## Requirements
 

@@ -37,8 +37,9 @@ st.markdown(
 .block-container {padding-top: 1.5rem; max-width: 1100px;}
 .hero {text-align: center; padding: 36px 0 22px 0;}
 .hero h1 {font-size: 3rem; font-weight: 500; letter-spacing: -0.03em; line-height: 1.1;
-  color: #111111; margin: 0 0 14px 0;}
-.hero p {color: #3F3F46; font-size: 1.05rem; max-width: 560px; margin: 0 auto; line-height: 1.6;}
+  color: #111111; margin: 0 0 14px 0; font-family: Georgia, "Times New Roman", serif !important;}
+.hero p {color: #3F3F41; font-size: 1.05rem; max-width: 560px; margin: 0 auto; line-height: 1.6;
+  font-family: Georgia, "Times New Roman", serif;}
 .st-key-search_card {background: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 16px;
   padding: 14px 16px 12px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.04);}
 .st-key-search_card [data-baseweb="textarea"], .st-key-search_card [data-baseweb="base-input"],
@@ -180,7 +181,7 @@ if start:
             with st.spinner("Agents are working… this usually takes 20–60 seconds."):
                 st.session_state["result"] = orchestrator.run(query, on_step=on_step)
         except LLMError as e:
-            st.error(f"LLM error: {e}")
+            st.error(str(e))
         except Exception as e:
             st.error(f"Something went wrong: {e}")
 

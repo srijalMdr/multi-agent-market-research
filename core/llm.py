@@ -7,7 +7,14 @@ import re
 from typing import TypeVar
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import (
+    APIConnectionError,
+    APITimeoutError,
+    AuthenticationError,
+    NotFoundError,
+    OpenAI,
+    RateLimitError,
+)
 from pydantic import BaseModel, ValidationError
 
 load_dotenv()
@@ -39,13 +46,15 @@ def _client() -> OpenAI:
     cfg = llm_config()
     if not has_llm_key():
         raise LLMError("LLM_API_KEY is missing. Copy .env.example to .env and add your key.")
-    return OpenAI(api_key=cfg["api_key"], base_url=cfg["base_url"])
+    return OpenAI(api_key=cfg["api_key"], base_url=cfg["base_url"], max_retries=6)
 
 
 def chat(system: str, user: str, temperature: float = 0.2, json_mode: bool = False) -> str:
     kwargs = {}
     if json_mode:
         kwargs["response_format"] = {"type": "json_object"}
+    if "gpt-oss" in llm_config()["model"]:
+        kwargs["reasoning_effort"] = "low"
     try:
         resp = _client().chat.completions.create(
             model=llm_config()["model"],
@@ -55,6 +64,19 @@ def chat(system: str, user: str, temperature: float = 0.2, json_mode: bool = Fal
         )
     except LLMError:
         raise
+    except RateLimitError as e:
+        raise LLMError(
+            "Rate limit reached on the free tier. Wait a minute and try again."
+        ) from e
+    except AuthenticationError as e:
+        raise LLMError("The LLM API key was rejected. Check LLM_API_KEY in your .env file.") from e
+    except NotFoundError as e:
+        raise LLMError(
+            f"The model '{llm_config()['model']}' is not available. "
+            "Set LLM_MODEL in .env to a model your provider currently offers."
+        ) from e
+    except (APIConnectionError, APITimeoutError) as e:
+        raise LLMError("Could not reach the LLM provider. Check your internet connection.") from e
     except Exception as e:
         raise LLMError(f"LLM request failed: {e}") from e
     return resp.choices[0].message.content or ""

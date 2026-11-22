@@ -13,6 +13,8 @@ class Source(BaseModel):
     title: str
     url: str
     snippet: str = ""
+    content: str = ""
+    scraped: bool = False
 
 
 class Finding(BaseModel):
@@ -25,6 +27,7 @@ class ResearchFindings(BaseModel):
     sources: list[Source] = Field(default_factory=list)
     findings: list[Finding] = Field(default_factory=list)
     search_provider: str = ""
+    scraped_count: int = 0
     is_sample_data: bool = False
 
 

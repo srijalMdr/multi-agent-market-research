@@ -5,9 +5,12 @@ from pydantic import BaseModel, Field
 
 from core.llm import chat_json
 from core.models import Finding, ResearchFindings, ResearchState, Source
+from core.scraper import can_scrape, scrape_many
 from core.search import load_sample_data, web_search
 
 MAX_SOURCES = 10
+SCRAPE_TARGET = 5
+SCRAPE_CANDIDATES = 8
 
 
 class _QueryPlan(BaseModel):
@@ -35,7 +38,9 @@ EXTRACT_PROMPT = (
 
 
 def _format_sources(sources: list[Source]) -> str:
-    return "\n\n".join(f"[{s.id}] {s.title}\nURL: {s.url}\n{s.snippet}" for s in sources)
+    return "\n\n".join(
+        f"[{s.id}] {s.title}\nURL: {s.url}\n{s.content or s.snippet}" for s in sources
+    )
 
 
 def run(state: ResearchState) -> ResearchState:
@@ -44,7 +49,7 @@ def run(state: ResearchState) -> ResearchState:
 
     raw, seen, providers = [], set(), set()
     for q in plan.queries:
-        results, provider = web_search(q, max_results=6)
+        results, provider = web_search(q, max_results=8)
         if provider != "none":
             providers.add(provider)
         for r in results:
@@ -59,11 +64,27 @@ def run(state: ResearchState) -> ResearchState:
         providers = {"Sample data"}
         state.add_log("Researcher", "Live search returned nothing. Using labelled SAMPLE DATA.")
 
+    if not is_sample:
+        raw.sort(key=lambda r: not can_scrape(r["url"]))
     sources = [
         Source(id=i, title=r["title"], url=r["url"], snippet=r["snippet"])
         for i, r in enumerate(raw[:MAX_SOURCES], start=1)
     ]
     state.add_log("Researcher", f"Collected {len(sources)} sources via {', '.join(sorted(providers))}.")
+
+    scraped_count = 0
+    if not is_sample:
+        candidates = [s for s in sources if can_scrape(s.url)][:SCRAPE_CANDIDATES]
+        pages = scrape_many([s.url for s in candidates], workers=8)
+        for s in candidates:
+            text = pages.get(s.url, "")
+            if scraped_count < SCRAPE_TARGET and len(text) > len(s.snippet) + 200:
+                s.content, s.scraped = text, True
+                scraped_count += 1
+        state.add_log(
+            "Researcher",
+            f"Scraped full text from {scraped_count} pages ({len(candidates)} attempted).",
+        )
 
     extracted = chat_json(
         EXTRACT_PROMPT,
@@ -83,6 +104,7 @@ def run(state: ResearchState) -> ResearchState:
         findings=findings,
         search_provider=", ".join(sorted(providers)),
         is_sample_data=is_sample,
+        scraped_count=scraped_count,
     )
     state.add_log("Researcher", f"Extracted {len(findings)} sourced findings. Handing off to Analyst.")
     return state

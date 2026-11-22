@@ -21,7 +21,7 @@ Orchestrator ─► Researcher ─► Analyst ─► Critic ─┬─ approved �
 | Agent | File | Job |
 |-------|------|-----|
 | **Orchestrator** | `agents/orchestrator.py` | Receives the query, creates the shared state, runs the agents in order, allows **at most one** revision |
-| **Researcher** | `agents/researcher.py` | Plans 3 search queries, runs web search, keeps up to 10 sources, extracts short facts **each tagged with source ids** |
+| **Researcher** | `agents/researcher.py` | Plans 3 search queries, runs web search, keeps up to 10 sources, **scrapes the full text of up to 5 pages**, and extracts short facts **each tagged with source ids** |
 | **Analyst** | `agents/analyst.py` | Writes the brief using **only** the findings, with citations like `[3]`, and lists missing information |
 | **Critic** | `agents/critic.py` | Checks the draft against the findings (unsupported claims, wrong citations, missing sections) and approves or requests one revision |
 
@@ -51,6 +51,10 @@ The app shows this whole trail under **"Agent handoffs"**: log, findings, first 
 - Up to two competitors (if relevant)
 - Key observations
 - Sources (clickable) and missing information
+
+### Web scraping
+
+After search, `core/scraper.py` downloads up to 8 scrapeable source pages in parallel (`requests`), extracts the main article text with **trafilatura**, dropping menus, ads and footers, and keeps the first 5 that succeed. Search results that can be scraped are ranked first. Each page is capped at about 1,500 characters to stay within free-tier token limits. If a page times out, blocks the request, is a PDF or is a social media or app-store link, the app falls back to the search snippet for that source. The **Sources** tab marks scraped pages with a *full text* tag.
 
 ### Search fallback
 
@@ -146,6 +150,7 @@ The app works with any OpenAI-compatible API. Change these three lines in `.env`
 │   ├── models.py           # Pydantic shared data (ResearchState, Brief, ...)
 │   ├── llm.py              # LLM client + validated JSON output with retry
 │   ├── search.py           # Tavily → DuckDuckGo → sample data
+│   ├── scraper.py          # fetches top pages and extracts main text
 │   └── report.py           # brief → Markdown
 ├── sample_data/            # labelled offline sample data
 ├── sample_output.md        # one real run
@@ -161,7 +166,8 @@ The app works with any OpenAI-compatible API. Change these three lines in `.env`
 |---------|-----|
 | "LLM_API_KEY is missing" | Create `.env` from `.env.example` and add your key, then restart Streamlit |
 | `404 model does not exist` | The provider retired the model. Pick a current one from your provider's model list and set `LLM_MODEL` |
-| `429` / rate limit | Free tiers have limits; wait a minute and try again |
+| Run takes over a minute | Groq's free tier allows about 8,000 tokens per minute. A run needs a bit more, so the app waits and retries automatically. A paid key or another provider is faster |
+| `429` / rate limit error | Wait a minute and try again |
 | Brief says it used SAMPLE DATA | Live search failed (no internet, or blocked). Check your connection or add a Tavily key |
 | Port 8501 already in use | `streamlit run app.py --server.port 8502` |
 
@@ -169,9 +175,9 @@ The app works with any OpenAI-compatible API. Change these three lines in `.env`
 
 ## Limitations and possible improvements
 
-- Search results are short snippets, not full pages, so details like market size are often missing. The brief lists these under **Missing information** instead of guessing.
+- At most 5 pages are scraped, each capped at about 1,500 characters, and some sites block scraping. Details like market size are often still missing, and the brief lists them under **Missing information** instead of guessing.
 - The LLM can still occasionally misread a source. The Critic reduces this but doesn't eliminate it.
-- Possible next steps: fetch full page text, cache results, run searches in parallel, add automated tests, deploy to Streamlit Community Cloud.
+- Possible next steps: cache results, run searches in parallel, add automated tests, deploy to Streamlit Community Cloud.
 
 ---
 

@@ -29,7 +29,7 @@ def brief_to_markdown(state: ResearchState) -> str:
     out.append("\n## Missing Information")
     out += [f"- {m}" for m in b.missing_information] or ["- None noted."]
     out.append(
-        f"\n---\n*Search: {state.findings.search_provider} · Model: {llm_config()['model']} · "
+        f"\n---\n*Search: {state.findings.search_provider} · Pages scraped: {state.findings.scraped_count} · Model: {llm_config()['model']} · "
         f"Critic approved first draft: {'yes' if state.feedback.approved else 'no (1 revision)'}*"
     )
     return "\n".join(out)

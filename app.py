@@ -85,6 +85,7 @@ st.markdown(
 .pipeline {margin-bottom: 18px;}
 [data-testid="stMetric"] {background: white; border: 1px solid #E2E8F0; border-radius: 14px; padding: 12px 16px;}
 [data-testid="stMetricValue"] {font-size: 1.7rem; color: #7C3AED; font-weight: 700;}
+.scraped {font-size: .7rem; background: #F5F3FF; color: #7C3AED; padding: 1px 7px; border-radius: 999px; margin-left: 6px;}
 .meta {color: #71717A; font-size: .8rem; margin: 8px 0 4px 0;}
 [data-testid="stSidebarCollapsedControl"], [data-testid="stSidebar"] {display: none;}
 .sample-banner {background: #FEF3C7; border: 1px solid #F59E0B; color: #92400E; border-radius: 12px;
@@ -203,7 +204,7 @@ if state and state.final_brief:
     m3.metric("Competitors", len(b.competitors))
     m4.metric("Critic", "Approved" if state.feedback.approved else "1 revision")
     st.markdown(
-        f'<div class="meta">Search: {esc(f.search_provider)} &middot; Model: {esc(llm_config()["model"])}</div>',
+        f'<div class="meta">Search: {esc(f.search_provider)} &middot; Pages scraped: {f.scraped_count} &middot; Model: {esc(llm_config()["model"])}</div>',
         unsafe_allow_html=True,
     )
 
@@ -280,10 +281,14 @@ if state and state.final_brief:
             st.json(state.model_dump())
 
     with tab_src:
-        st.caption(f"Collected via **{f.search_provider}**. Sources cited in the brief are marked *cited*.")
+        st.caption(
+            f"Collected via **{f.search_provider}**. *full text* means the page was scraped; "
+            "others use the search snippet. *cited* means the brief uses it."
+        )
         rows = []
         for s in f.sources:
-            tag = '<span class="used">cited</span>' if s.id in b.source_ids else ""
+            tag = '<span class="scraped">full text</span>' if s.scraped else ""
+            tag += '<span class="used">cited</span>' if s.id in b.source_ids else ""
             rows.append(
                 f'<div class="src"><div class="num">{s.id}</div><div>'
                 f'<a href="{esc(s.url)}" target="_blank">{esc(s.title)}</a>{tag}'

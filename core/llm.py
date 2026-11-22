@@ -39,13 +39,15 @@ def _client() -> OpenAI:
     cfg = llm_config()
     if not has_llm_key():
         raise LLMError("LLM_API_KEY is missing. Copy .env.example to .env and add your key.")
-    return OpenAI(api_key=cfg["api_key"], base_url=cfg["base_url"])
+    return OpenAI(api_key=cfg["api_key"], base_url=cfg["base_url"], max_retries=6)
 
 
 def chat(system: str, user: str, temperature: float = 0.2, json_mode: bool = False) -> str:
     kwargs = {}
     if json_mode:
         kwargs["response_format"] = {"type": "json_object"}
+    if "gpt-oss" in llm_config()["model"]:
+        kwargs["reasoning_effort"] = "low"
     try:
         resp = _client().chat.completions.create(
             model=llm_config()["model"],
